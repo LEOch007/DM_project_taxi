@@ -1,8 +1,10 @@
 ## DM_project_taxi
-UST CSIT5210 course project
+UST 2019Fall CSIT5210 course project
 
 ***
 
-CSIT5210 Assignment.ipynb   --   Assignment File
+### File Structure
 
-Data                        --   Data Folder
+CSIT5210 Assignment.ipynb: assignment file
+
+data directory: contains relevant data files
