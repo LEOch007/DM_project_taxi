@@ -47,6 +47,12 @@ train_data_8am = train_data_8am.loc[train_data_8am['extras'] < 10]
 train_data_8am = train_data_8am.loc[train_data_8am['trip_total'] < 100]
 train_data_8am = train_data_8am.reset_index()
 
+# seperate train_data and validation_data
+train1_data_8am = train_data_8am.sample(frac=0.99)
+train1_data_8am = train1_data_8am.reset_index()
+validation_data_8am = train_data_8am[~train_data_8am.index.isin(train1_data_8am.index)]
+validation_data_8am = validation_data_8am.reset_index()
+
 def get_one_test_example(s):
     order_number = [1, 2, 3]
     order_latitude = []
