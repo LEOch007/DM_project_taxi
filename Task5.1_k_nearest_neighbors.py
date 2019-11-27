@@ -47,7 +47,28 @@ train_data_8am = train_data_8am.loc[train_data_8am['extras'] < 10]
 train_data_8am = train_data_8am.loc[train_data_8am['trip_total'] < 100]
 train_data_8am = train_data_8am.reset_index()
 
-# seperate train_data and validation_data
+# scatter figure of (pickup_latitude, pickup_longitude, fare)
+from mpl_toolkits.mplot3d import Axes3D
+fig = plt.figure()
+ax = Axes3D(fig)
+ax.scatter(train_data_8am['pickup_latitude'], train_data_8am['pickup_longitude'], train_data_8am['fare'])
+ax.set_zlabel('fare')
+ax.set_ylabel('pickup_longitude')
+ax.set_xlabel('pickup_latitude')
+plt.savefig('pickup_location fare 3-D scatter figure')
+plt.close()
+
+# scatter figure of (pickup_latitude, pickup_longitude, tips)
+fig = plt.figure()
+ax = Axes3D(fig)
+ax.scatter(train_data_8am['pickup_latitude'], train_data_8am['pickup_longitude'], train_data_8am['tips'])
+ax.set_zlabel('tips')
+ax.set_ylabel('pickup_longitude')
+ax.set_xlabel('pickup_latitude')
+plt.savefig('pickup_location tips 3-D scatter figure')
+plt.close()
+
+# seperate train_data into train_data1(99%) and validation_data(1%)
 train1_data_8am = train_data_8am.sample(frac=0.99)
 train1_data_8am = train1_data_8am.reset_index()
 validation_data_8am = train_data_8am[~train_data_8am.index.isin(train1_data_8am.index)]
@@ -75,9 +96,9 @@ plt.legend()
 plt.savefig('pickup_points & one test example points scatter figure')
 plt.close()
 
-def N_nearest_neighbors_predictor(test, n, train_data):
+def k_nearest_neighbors_predictor(test, k, train_data):
     """
-    Finding the test order's nearest N neighbors,
+    Finding the test order's nearest k neighbors,
     Using the mean value of them to estimate the corresponding value of test order
 
     """
@@ -86,24 +107,42 @@ def N_nearest_neighbors_predictor(test, n, train_data):
                              + (tem_data['pickup_longitude'] - test['pickup_longitude']) ** 2).apply(sqrt)
 
     tem_data.sort_values('distance', inplace=True, ascending=False)
-    estimate_fare = round(tem_data['fare'][:(n+1)].mean(), 4)
-    estimate_tips = round(tem_data['tips'][:(n+1)].mean(), 4)
+    estimate_fare = round(tem_data['fare'][:(k+1)].mean(), 4)
+    estimate_tips = round(tem_data['tips'][:(k+1)].mean(), 4)
 
     return (estimate_fare, estimate_tips)
 
+# get the MSE value of kNN method using validation data to evaluate the model
+validation_position = validation_data_8am.loc[:, ('pickup_latitude', 'pickup_longitude')]
+validation_fare = validation_data_8am.loc[:, ('fare')]
+validation_tips = validation_data_8am.loc[:, ('tips')]
+fare_squred_error_sum = 0
+tips_squred_error_sum = 0
+
+for i in range(0,len(validation_position)):
+    e_fare, e_tips = k_nearest_neighbors_predictor(validation_position.loc[i], 10, train1_data_8am)
+    fare_squred_error_sum += (e_fare - validation_fare[i]) ** 2
+    tips_squred_error_sum += (e_tips - validation_tips[i]) ** 2
+
+MSE_fare = sqrt(fare_squred_error_sum / len(validation_position))
+MSE_tips = sqrt(tips_squred_error_sum / len(validation_position))
+
+print('fare MSE of validation data:', MSE_fare)
+print('tips MSE of validation data:', MSE_tips)
+
+# get the prediction of test data
 for i in range(len(test_data)):
     ex = get_one_test_example(test_data.loc[i])
     best_order = 0
     best_profit = 0
     for j in range(len(ex)):
-        e_fare, e_tips = N_nearest_neighbors_predictor(ex.loc[j], 10, train_data_8am)
+        e_fare, e_tips = k_nearest_neighbors_predictor(ex.loc[j], 10, train_data_8am)
         test_data.loc[i, 'order'+str(j+1)+'_fare'] = e_fare
         test_data.loc[i, 'order'+str(j+1)+'_tips'] = e_tips
         if (e_fare + e_tips) > best_profit:
             best_order = j+1
             best_profit = e_fare + e_tips
     test_data.loc[i, 'best'] = 'order' + str(best_order)
-
 
 test_data.to_csv('5_1_result.csv', index=0)
 
