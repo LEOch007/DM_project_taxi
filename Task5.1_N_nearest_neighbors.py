@@ -54,7 +54,7 @@ def get_one_test_example(s):
     for i in order_number:
         order_latitude.append(s['order'+str(i)+'_pickup_latitude'])
         order_longitude.append(s['order' + str(i) + '_pickup_longitude'])
-    res = pd.DataFrame(columns=['order_number', 'pickup_latitude', 'pick_logitude'])
+    res = pd.DataFrame(columns=['order_number', 'pickup_latitude', 'pick_longitude'])
     res['order_number'] = pd.Series(order_number)
     res['pickup_latitude'] = pd.Series(order_latitude)
     res['pickup_longitude'] = pd.Series(order_longitude)
@@ -75,12 +75,13 @@ def N_nearest_neighbors_predictor(test, n, train_data):
     Using the mean value of them to estimate the corresponding value of test order
 
     """
-    train_data['distance'] = ((train_data['pickup_latitude'] - test['pickup_latitude']) ** 2 \
-                             + (train_data['pickup_longitude'] - test['pickup_longitude']) ** 2).apply(sqrt)
+    tem_data = train_data
+    tem_data['distance'] = ((tem_data['pickup_latitude'] - test['pickup_latitude']) ** 2 \
+                             + (tem_data['pickup_longitude'] - test['pickup_longitude']) ** 2).apply(sqrt)
 
-    train_data.sort_values('distance', inplace=True, ascending=False)
-    estimate_fare = round(train_data['fare'][:(n+1)].mean(), 4)
-    estimate_tips = round(train_data['tips'][:(n+1)].mean(), 4)
+    tem_data.sort_values('distance', inplace=True, ascending=False)
+    estimate_fare = round(tem_data['fare'][:(n+1)].mean(), 4)
+    estimate_tips = round(tem_data['tips'][:(n+1)].mean(), 4)
 
     return (estimate_fare, estimate_tips)
 
@@ -90,12 +91,13 @@ for i in range(len(test_data)):
     best_profit = 0
     for j in range(len(ex)):
         e_fare, e_tips = N_nearest_neighbors_predictor(ex.loc[j], 10, train_data_8am)
-        test_data['order'+str(j+1)+'_fare'] = e_fare
-        test_data['order'+str(j+1)+'_tips'] = e_tips
+        test_data.loc[i, 'order'+str(j+1)+'_fare'] = e_fare
+        test_data.loc[i, 'order'+str(j+1)+'_tips'] = e_tips
         if (e_fare + e_tips) > best_profit:
             best_order = j+1
             best_profit = e_fare + e_tips
     test_data.loc[i, 'best'] = 'order' + str(best_order)
+
 
 test_data.to_csv('5_1_result.csv', index=0)
 
