@@ -6,3 +6,7 @@ UST CSIT5210 course project
 CSIT5210 Assignment.ipynb   --   Assignment File
 
 Data                        --   Data Folder
+
+Thanks to:
+
+QingduoFeng, Shenpotato and yanjing
